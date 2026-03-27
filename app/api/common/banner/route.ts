@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
     const body = await request.json()
     const formBody = new URLSearchParams(body).toString()
-    const registrData = await fetch("https://ibronevik.ru/taxi/c/0/api/v1/token/authorized", {
+    const registrData = await fetch("https://ibronevik.ru/taxi/c/0/api/v1/data", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -25,25 +23,42 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    cookieStore.set("token", responseData.data.token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 дней
-    })
-
-    cookieStore.set("hash", responseData.data.u_hash, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 дней
-    })
-
     return NextResponse.json({
       success: true,
       data: responseData,
+    })
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error,
+      },
+      { status: 500 },
+    )
+  }
+}
+
+export async function GET() {
+  try {
+    const registrData = await fetch(`https://ibronevik.ru/taxi/c/0/api/v1/data?_=${Date.now()}`, {
+      method: "GET",
+      cache: "no-store",
+    })
+
+    const responseData = await registrData.json()
+
+    if (responseData.status === "error") {
+      return NextResponse.json({
+        success: false,
+        error: responseData.message || "Unknown error",
+        code: responseData.code || registrData.status,
+        data: responseData.data || null,
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: JSON.parse(responseData.data.data.lang_vls.banner[1]),
     })
   } catch (error) {
     return NextResponse.json(

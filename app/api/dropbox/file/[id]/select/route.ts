@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
-    const cookieStore = await cookies()
+    const { id } = await context.params
     const body = await request.json()
     const formBody = new URLSearchParams(body).toString()
-    const registrData = await fetch("https://ibronevik.ru/taxi/c/0/api/v1/token/authorized", {
+    const registrData = await fetch(`https://ibronevik.ru/taxi/c/0/api/v1/dropbox/file/${id}/select`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -24,22 +26,6 @@ export async function POST(request: NextRequest) {
         data: responseData.data || null,
       })
     }
-
-    cookieStore.set("token", responseData.data.token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 дней
-    })
-
-    cookieStore.set("hash", responseData.data.u_hash, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 дней
-    })
 
     return NextResponse.json({
       success: true,
